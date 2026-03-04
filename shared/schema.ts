@@ -15,9 +15,13 @@ export const questions = pgTable("questions", {
   transcript: text("transcript"),
   feedback: text("feedback"),
   score: integer("score"),
-  status: text("status").notNull().default("pending"), // pending, answered, completed
-});
 
+  speechClarity: integer("speech_clarity"),
+  confidence: integer("confidence"),
+  structure: integer("structure"),
+
+  status: text("status"),
+});
 export const insertInterviewSchema = createInsertSchema(interviews).pick({ role: true });
 export const insertQuestionSchema = createInsertSchema(questions).pick({ interviewId: true, questionText: true });
 

@@ -10,7 +10,15 @@ export interface IStorage {
   getQuestions(interviewId: number): Promise<typeof questions.$inferSelect[]>;
   getQuestion(id: number): Promise<typeof questions.$inferSelect | undefined>;
   createQuestion(question: InsertQuestion): Promise<typeof questions.$inferSelect>;
-  updateQuestionWithAnswer(id: number, transcript: string, feedback: string, score: number): Promise<typeof questions.$inferSelect>;
+  updateQuestionWithAnswer(
+    id: number,
+    transcript: string,
+    feedback: string,
+    score: number,
+    speechClarity: number,
+    confidence: number,
+    structure: number
+  ): Promise<typeof questions.$inferSelect>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -42,9 +50,26 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateQuestionWithAnswer(id: number, transcript: string, feedback: string, score: number) {
-    const [updated] = await db.update(questions)
-      .set({ transcript, feedback, score, status: "completed" })
+  async updateQuestionWithAnswer(
+    id: number,
+    transcript: string,
+    feedback: string,
+    score: number,
+    speechClarity: number,
+    confidence: number,
+    structure: number
+  ) {
+    const [updated] = await db
+      .update(questions)
+      .set({
+        transcript,
+        feedback,
+        score,
+        speechClarity,
+        confidence,
+        structure,
+        status: "completed"
+      })
       .where(eq(questions.id, id))
       .returning();
     return updated;

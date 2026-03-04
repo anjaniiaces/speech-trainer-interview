@@ -127,7 +127,31 @@ export default function QuestionSession() {
                   </div>
                 </div>
               </div>
+              {/* Speech Coaching Scores */}
+              <div className="glass-panel p-6 rounded-3xl mt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">
+                  Speech Coaching
+                </h3>
 
+                <div className="space-y-3 text-sm">
+
+                  <div className="flex justify-between">
+                    <span>Speech Clarity</span>
+                    <span>{question.speechClarity ?? "-"} / 10</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Confidence</span>
+                    <span>{question.confidence ?? "-"} / 10</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Answer Structure</span>
+                    <span>{question.structure ?? "-"} / 10</span>
+                  </div>
+
+                </div>
+              </div>
               {/* Feedback Card */}
               <div className="md:col-span-2 glass-panel p-8 rounded-3xl relative">
                 <div className="absolute top-6 right-6 text-primary/20">

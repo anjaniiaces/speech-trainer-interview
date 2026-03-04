@@ -34,10 +34,10 @@ export async function registerRoutes(
       const interview = await storage.createInterview(input);
       
       // Generate some default questions for the role
-      const prompt = `Generate 3 standard behavioral interview questions for a ${input.role} position. Format the output as a JSON array of strings. Only return the JSON array, no other text.`;
+      const prompt = `Generate 5 standard behavioral interview questions for a ${input.role} position. Format the output as a JSON array of strings. Only return the JSON array, no other text.`;
       
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-4.1",
         messages: [{ role: "user", content: prompt }],
       });
       
@@ -87,43 +87,84 @@ export async function registerRoutes(
       }
 
       // Analyze transcript with OpenAI
-      const prompt = `
-        You are an expert interview coach. 
-        The candidate was asked this question: "${question.questionText}"
-        The candidate answered: "${input.transcript}"
-        
-        Analyze the communication skills and the content of the answer.
-        Provide a constructive written feedback report (max 3 paragraphs) highlighting strengths and areas for improvement.
-        Also provide a score out of 100 for the overall answer quality.
-        
-        Format your response as JSON with two fields:
-        {
-          "feedback": "your detailed feedback string",
-          "score": 85
-        }
-      `;
-      
+              const prompt = `
+You are an expert speech therapist, communication coach, and interview mentor.
+
+The candidate was asked the interview question:
+"${question.questionText}"
+
+The candidate responded with this transcript from a spoken answer:
+"${input.transcript}"
+
+Evaluate the candidate on the following dimensions:
+
+1. Speech Delivery
+- clarity of expression
+- pacing and fluency
+- filler words or hesitation
+- confidence in communication
+
+2. Interview Answer Quality
+- relevance to the question
+- logical structure (STAR method if applicable)
+- strength of example
+- impact and outcome
+
+3. Professional Communication
+- vocabulary and professionalism
+- conciseness
+- persuasiveness
+
+Return your evaluation as JSON in the following format:
+
+{
+  "feedback": "Detailed constructive feedback explaining strengths and areas for improvement.",
+  "score": 0-100,
+  "speechClarity": 0-10,
+  "confidence": 0-10,
+  "structure": 0-10
+}
+`;
+ 
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-4.1",
+        response_format: { type: "json_object" },
         messages: [{ role: "user", content: prompt }],
       });
-      
       let feedback = "No feedback generated.";
       let score = 0;
-      
+      let speechClarity = 0;
+      let confidence = 0;
+      let structure = 0;
+
       try {
-        const content = response.choices[0]?.message?.content || "{}";
-        const cleanedContent = content.replace(/```json\n|\n```|```/g, '');
-        const analysis = JSON.parse(cleanedContent);
+        const analysis = JSON.parse(response.choices[0].message.content);
+        console.log("AI Analysis:", analysis);
         feedback = analysis.feedback || feedback;
         score = analysis.score || score;
+        speechClarity = Number(analysis.speechClarity) || 0;
+        confidence = Number(analysis.confidence) || 0;
+        structure = Number(analysis.structure) || 0;
       } catch (e) {
         feedback = "Error parsing the feedback from the AI coach.";
       }
-      
-      const updatedQuestion = await storage.updateQuestionWithAnswer(questionId, input.transcript, feedback, score);
-      
-      res.status(200).json(updatedQuestion);
+     
+      const updatedQuestion = await storage.updateQuestionWithAnswer(
+        questionId,
+        input.transcript,
+        feedback,
+        score,
+        speechClarity,
+        confidence,
+        structure
+      );
+
+      res.status(200).json({
+        ...updatedQuestion,
+        speechClarity,
+        confidence,
+        structure
+      });
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({
