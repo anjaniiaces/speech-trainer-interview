@@ -59,19 +59,32 @@ export class DatabaseStorage implements IStorage {
     confidence: number,
     structure: number
   ) {
+    console.log("DEBUG: Saving to DB:", {
+      id,
+      transcript: transcript.substring(0, 20) + "...",
+      feedback: feedback.substring(0, 20) + "...",
+      score,
+      speechClarity,
+      confidence,
+      structure
+    });
+
     const [updated] = await db
       .update(questions)
       .set({
-        transcript,
-        feedback,
-        score,
-        speechClarity,
-        confidence,
-        structure,
+        transcript: transcript,
+        feedback: feedback,
+        score: score,
+        speechClarity: speechClarity,
+        confidence: confidence,
+        structure: structure,
         status: "completed"
       })
       .where(eq(questions.id, id))
       .returning();
+
+    console.log("DEBUG: Row after DB update:", updated);
+
     return updated;
   }
 }

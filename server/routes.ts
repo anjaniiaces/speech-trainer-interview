@@ -115,19 +115,28 @@ Evaluate the candidate on the following dimensions:
 - conciseness
 - persuasiveness
 
-Return your evaluation as JSON in the following format:
+Return ONLY valid JSON.
+
+The JSON MUST include these fields:
 
 {
-  "feedback": "Detailed constructive feedback explaining strengths and areas for improvement.",
-  "score": 0-100,
-  "speechClarity": 0-10,
-  "confidence": 0-10,
-  "structure": 0-10
+  "feedback": "string",
+  "score": number,
+  "speechClarity": number,
+  "confidence": number,
+  "structure": number
 }
+
+Rules:
+- score must be between 0 and 100
+- speechClarity must be between 0 and 10
+- confidence must be between 0 and 10
+- structure must be between 0 and 10
+- Do not omit any field.
 `;
  
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4o",
         response_format: { type: "json_object" },
         messages: [{ role: "user", content: prompt }],
       });
@@ -137,17 +146,29 @@ Return your evaluation as JSON in the following format:
       let confidence = 0;
       let structure = 0;
 
+      const raw = response.choices[0].message.content;
+      console.log("DEBUG: RAW AI RESPONSE:", raw);
+
+      let analysis: any = {};
+
       try {
-        const analysis = JSON.parse(response.choices[0].message.content);
-        console.log("AI Analysis:", analysis);
-        feedback = analysis.feedback || feedback;
-        score = analysis.score || score;
-        speechClarity = Number(analysis.speechClarity) || 0;
-        confidence = Number(analysis.confidence) || 0;
-        structure = Number(analysis.structure) || 0;
+        analysis = typeof raw === "string" ? JSON.parse(raw) : raw;
       } catch (e) {
-        feedback = "Error parsing the feedback from the AI coach.";
+        console.error("DEBUG: JSON parse failed", e);
       }
+
+      feedback = analysis.feedback ?? "No feedback generated";
+      score = analysis.score ?? 0;
+      speechClarity = analysis.speechClarity ?? 0;
+      confidence = analysis.confidence ?? 0;
+      structure = analysis.structure ?? 0;
+
+      console.log("DEBUG: Parsed AI Analysis:", {
+        score,
+        speechClarity,
+        confidence,
+        structure
+      });
      
       const updatedQuestion = await storage.updateQuestionWithAnswer(
         questionId,
@@ -159,12 +180,9 @@ Return your evaluation as JSON in the following format:
         structure
       );
 
-      res.status(200).json({
-        ...updatedQuestion,
-        speechClarity,
-        confidence,
-        structure
-      });
+      console.log("DEBUG: Updated Question from Storage:", updatedQuestion);
+
+      res.status(200).json(updatedQuestion);
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({
