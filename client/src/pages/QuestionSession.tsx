@@ -1,7 +1,7 @@
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, BrainCircuit, Quote, ChevronRight } from "lucide-react";
+import { ArrowLeft, BrainCircuit, Quote, ChevronRight, RotateCcw, Lightbulb, Sparkles } from "lucide-react";
 import { Layout } from "@/components/Layout";
-import { useQuestions, useAnswerQuestion } from "@/hooks/use-questions";
+import { useQuestions, useAnswerQuestion, useResetQuestion } from "@/hooks/use-questions";
 import { SpeechRecorder } from "@/components/SpeechRecorder";
 import { motion } from "framer-motion";
 
@@ -12,6 +12,7 @@ export default function QuestionSession() {
   
   const { data: questions, isLoading } = useQuestions(interviewId);
   const answerMutation = useAnswerQuestion();
+  const resetMutation = useResetQuestion();
 
   const question = questions?.find(q => q.id === questionId);
   
@@ -26,6 +27,14 @@ export default function QuestionSession() {
       await answerMutation.mutateAsync({ id: questionId, transcript });
     } catch (error) {
       console.error("Failed to submit:", error);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      await resetMutation.mutateAsync(questionId);
+    } catch (error) {
+      console.error("Failed to reset:", error);
     }
   };
 
@@ -176,9 +185,49 @@ export default function QuestionSession() {
                 "{question.transcript}"
               </p>
             </div>
+
+            {/* Improvement Pointers */}
+            {question.improvementPointers && (
+              <div className="glass-panel p-8 rounded-3xl border border-blue-500/10">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-blue-400 mb-4 uppercase tracking-widest">
+                  <Lightbulb className="w-4 h-4" />
+                  Speech & Delivery Pointers
+                </h3>
+                <p className="text-foreground/90 leading-relaxed font-medium">
+                  {question.improvementPointers}
+                </p>
+              </div>
+            )}
+
+            {/* Suggested Answer (STAR Model) */}
+            {question.suggestedAnswer && (
+              <div className="glass-panel p-8 rounded-3xl border border-purple-500/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                  <Sparkles className="w-24 h-24 text-purple-500" />
+                </div>
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-purple-400 mb-4 uppercase tracking-widest">
+                  <Sparkles className="w-4 h-4" />
+                  AI Suggested STAR Answer
+                </h3>
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-foreground/90 leading-relaxed italic">
+                    {question.suggestedAnswer}
+                  </p>
+                </div>
+              </div>
+            )}
             
             {/* Next Actions */}
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-between items-center pt-4">
+              <button 
+                onClick={handleReset}
+                disabled={resetMutation.isPending}
+                className="flex items-center gap-2 px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-muted-foreground font-semibold hover:bg-white/10 transition-all"
+              >
+                <RotateCcw className={`w-5 h-5 ${resetMutation.isPending ? 'animate-spin' : ''}`} />
+                Try Again
+              </button>
+
               {nextQuestion ? (
                 <Link href={`/interview/${interviewId}/question/${nextQuestion.id}`}>
                   <button className="flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-all shadow-xl hover:-translate-y-1">

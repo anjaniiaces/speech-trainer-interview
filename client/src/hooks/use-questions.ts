@@ -18,6 +18,8 @@ export function useQuestions(interviewId: number) {
         speechClarity: number | null;
         confidence: number | null;
         structure: number | null;
+        suggestedAnswer: string | null;
+        improvementPointers: string | null;
         status: string | null;
       }[]>;
     },
@@ -40,6 +42,23 @@ export function useAnswerQuestion() {
       return res.json();
     },
     onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/interviews'] });
+    },
+  });
+}
+
+export function useResetQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/questions/${id}/reset`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to reset question");
+      return res.json();
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/interviews'] });
     },
   });
