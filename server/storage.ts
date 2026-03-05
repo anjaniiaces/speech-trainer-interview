@@ -59,7 +59,7 @@ export class DatabaseStorage implements IStorage {
     confidence: number,
     structure: number
   ) {
-    console.log("DEBUG: Saving to DB:", {
+    console.log("UPDATE PAYLOAD:", {
       id,
       transcript: transcript.substring(0, 20) + "...",
       feedback: feedback.substring(0, 20) + "...",
@@ -69,7 +69,7 @@ export class DatabaseStorage implements IStorage {
       structure
     });
 
-    const [updated] = await db
+    const result = await db
       .update(questions)
       .set({
         transcript: transcript,
@@ -83,9 +83,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(questions.id, id))
       .returning();
 
-    console.log("DEBUG: Row after DB update:", updated);
+    console.log("DB UPDATE RESULT:", result);
 
-    return updated;
+    const verify = await db
+      .select()
+      .from(questions)
+      .where(eq(questions.id, id));
+
+    console.log("DB VERIFY RESULT:", verify);
+
+    return result[0];
   }
 }
 
