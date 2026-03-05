@@ -145,6 +145,8 @@ Rules:
       let speechClarity = 0;
       let confidence = 0;
       let structure = 0;
+      let suggestedAnswer = "";
+      let improvementPointers = "";
 
       const raw = response.choices[0].message.content;
       console.log("DEBUG: RAW AI RESPONSE:", raw);
@@ -162,6 +164,8 @@ Rules:
       speechClarity = analysis.speechClarity ?? 0;
       confidence = analysis.confidence ?? 0;
       structure = analysis.structure ?? 0;
+      suggestedAnswer = analysis.suggestedAnswer ?? "";
+      improvementPointers = analysis.improvementPointers ?? "";
 
       console.log("DEBUG: Parsed AI Analysis:", {
         score,
@@ -177,7 +181,9 @@ Rules:
         score,
         speechClarity,
         confidence,
-        structure
+        structure,
+        suggestedAnswer,
+        improvementPointers
       );
 
       console.log("DEBUG: Updated Question from Storage:", updatedQuestion);
@@ -192,6 +198,25 @@ Rules:
       }
       throw err;
     }
+  });
+
+  app.post("/api/questions/:id/reset", async (req, res) => {
+    const questionId = Number(req.params.id);
+    const [updated] = await db.update(questions)
+      .set({ 
+        transcript: null, 
+        feedback: null, 
+        score: null, 
+        speechClarity: null, 
+        confidence: null, 
+        structure: null, 
+        suggestedAnswer: null, 
+        improvementPointers: null, 
+        status: "pending" 
+      })
+      .where(eq(questions.id, questionId))
+      .returning();
+    res.json(updated);
   });
 
   // Seed initial data if none exists

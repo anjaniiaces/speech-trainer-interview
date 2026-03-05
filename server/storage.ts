@@ -57,7 +57,9 @@ export class DatabaseStorage implements IStorage {
     score: number,
     speechClarity: number,
     confidence: number,
-    structure: number
+    structure: number,
+    suggestedAnswer?: string,
+    improvementPointers?: string
   ) {
     console.log("UPDATE PAYLOAD:", {
       id,
@@ -66,7 +68,9 @@ export class DatabaseStorage implements IStorage {
       score,
       speechClarity,
       confidence,
-      structure
+      structure,
+      suggestedAnswer: suggestedAnswer?.substring(0, 20) + "...",
+      improvementPointers: improvementPointers?.substring(0, 20) + "..."
     });
 
     const result = await db
@@ -78,6 +82,8 @@ export class DatabaseStorage implements IStorage {
         speechClarity: speechClarity,
         confidence: confidence,
         structure: structure,
+        suggestedAnswer: suggestedAnswer,
+        improvementPointers: improvementPointers,
         status: "completed"
       })
       .where(eq(questions.id, id))

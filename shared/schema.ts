@@ -20,6 +20,9 @@ export const questions = pgTable("questions", {
   confidence: integer("confidence"),
   structure: integer("structure"),
 
+  suggestedAnswer: text("suggested_answer"),
+  improvementPointers: text("improvement_pointers"),
+
   status: text("status"),
 });
 export const insertInterviewSchema = createInsertSchema(interviews).pick({ role: true });
