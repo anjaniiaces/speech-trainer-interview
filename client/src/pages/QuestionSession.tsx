@@ -207,11 +207,13 @@ export default function QuestionSession() {
                 </div>
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-purple-400 mb-4 uppercase tracking-widest">
                   <Sparkles className="w-4 h-4" />
-                  AI Suggested STAR Answer
+                  Suggested Reply
                 </h3>
                 <div className="prose prose-invert max-w-none">
-                  <p className="text-foreground/90 leading-relaxed italic">
+                  <p className="text-foreground/90 leading-relaxed italic border-l-4 border-purple-500/30 pl-6 relative">
+                    <span className="absolute -left-2 top-0 text-4xl text-purple-500/20 font-serif">"</span>
                     {question.suggestedAnswer}
+                    <span className="absolute -right-2 bottom-0 text-4xl text-purple-500/20 font-serif">"</span>
                   </p>
                 </div>
               </div>

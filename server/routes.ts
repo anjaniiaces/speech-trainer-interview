@@ -148,13 +148,14 @@ Rules:
       let suggestedAnswer = "";
       let improvementPointers = "";
 
-      const raw = response.choices[0].message.content;
+      const raw = response.choices[0].message.content || "{}";
       console.log("DEBUG: RAW AI RESPONSE:", raw);
 
       let analysis: any = {};
 
       try {
-        analysis = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const cleanedRaw = raw.replace(/```json\n|\n```|```/g, '').trim();
+        analysis = JSON.parse(cleanedRaw);
       } catch (e) {
         console.error("DEBUG: JSON parse failed", e);
       }

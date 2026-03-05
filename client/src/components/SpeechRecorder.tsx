@@ -36,7 +36,7 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = 'en-IN';
 
     recognition.onstart = () => {
       setIsRecording(true);
@@ -45,9 +45,9 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
 
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
-      let finalTranscript = finalTranscriptRef.current;
+      let finalTranscript = "";
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      for (let i = 0; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript + " ";
         } else {
@@ -55,7 +55,6 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
         }
       }
 
-      finalTranscriptRef.current = finalTranscript;
       setTranscript(finalTranscript + interimTranscript);
     };
 
