@@ -16,6 +16,7 @@ export default function QuestionSession() {
   const resetMutation = useResetQuestion();
 
   const question = questions?.find(q => q.id === questionId);
+  const isCompleted = question?.status === 'completed';
   
   // Text-to-Speech for the question
   useEffect(() => {
@@ -76,8 +77,6 @@ export default function QuestionSession() {
       </Layout>
     );
   }
-
-  const isCompleted = question.status === 'completed';
 
   // Circular progress math
   const score = question.score || 0;
