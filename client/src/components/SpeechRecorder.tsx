@@ -37,6 +37,10 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-IN';
+    // Disable any potential browser-side grammar correction/autocorrect
+    if ('grammars' in recognition) {
+      recognition.grammars = new (window as any).SpeechGrammarList();
+    }
 
     recognition.onstart = () => {
       setIsRecording(true);

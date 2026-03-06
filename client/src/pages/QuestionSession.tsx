@@ -1,9 +1,10 @@
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, BrainCircuit, Quote, ChevronRight, RotateCcw, Lightbulb, Sparkles } from "lucide-react";
+import { ArrowLeft, BrainCircuit, Quote, ChevronRight, RotateCcw, Lightbulb, Sparkles, UserCircle } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useQuestions, useAnswerQuestion, useResetQuestion } from "@/hooks/use-questions";
 import { SpeechRecorder } from "@/components/SpeechRecorder";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 export default function QuestionSession() {
   const [, params] = useRoute("/interview/:interviewId/question/:id");
@@ -16,6 +17,21 @@ export default function QuestionSession() {
 
   const question = questions?.find(q => q.id === questionId);
   
+  // Text-to-Speech for the question
+  useEffect(() => {
+    if (question && !isCompleted) {
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(question.questionText);
+      utterance.lang = 'en-IN';
+      // Find an Indian voice if available
+      const voices = synth.getVoices();
+      const indianVoice = voices.find(v => v.lang === 'en-IN' || v.name.includes('India'));
+      if (indianVoice) utterance.voice = indianVoice;
+      synth.speak(utterance);
+      return () => synth.cancel();
+    }
+  }, [question?.id, isCompleted]);
+
   // Find next question for flow
   const currentIndex = questions?.findIndex(q => q.id === questionId) ?? -1;
   const nextQuestion = (questions && currentIndex >= 0 && currentIndex < questions.length - 1) 
@@ -81,6 +97,23 @@ export default function QuestionSession() {
       <div className="max-w-4xl mx-auto w-full">
         {/* Question Header */}
         <div className="mb-10 text-center">
+          <div className="flex justify-center mb-6">
+            <motion.div
+              animate={{ 
+                scale: [1, 1.05, 1],
+                rotate: [0, 1, -1, 0]
+              }}
+              transition={{ 
+                duration: 4, 
+                repeat: Infinity,
+                ease: "easeInOut" 
+              }}
+              className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary/20 to-blue-400/20 flex items-center justify-center border-2 border-primary/30 relative"
+            >
+              <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-20" />
+              <UserCircle className="w-16 h-16 text-primary" />
+            </motion.div>
+          </div>
           <div className="inline-block px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm font-bold text-primary mb-6">
             Question {currentIndex + 1}
           </div>
