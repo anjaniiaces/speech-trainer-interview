@@ -103,6 +103,7 @@ Evaluate the candidate on the following dimensions:
 - pacing and fluency
 - filler words or hesitation
 - confidence in communication
+- Identify recurring catchphrases or "pet phrases" (e.g., constant use of "basically", "you know", "actually")
 
 2. Interview Answer Quality
 - relevance to the question
@@ -114,6 +115,10 @@ Evaluate the candidate on the following dimensions:
 - vocabulary and professionalism
 - conciseness
 - persuasiveness
+
+Important: 
+- If the score is > 50, start the "feedback" with a highly positive, encouraging statement to bolster their confidence (e.g., "Excellent progress! You're showing great potential...").
+- If this is a "Try Again" attempt (the user is re-answering) and they improved their score, start with an even more enthusiastic acknowledgement of their growth.
 
 Return ONLY valid JSON.
 
@@ -128,7 +133,8 @@ The JSON MUST include these fields:
   "suggestedAnswer": "STAR model answer",
   "improvementPointers": "improvement pointers",
   "fillerCount": number,
-  "gapAnalysis": "Analysis of gaps and pauses in speech"
+  "gapAnalysis": "Analysis of gaps and pauses in speech",
+  "catchphrases": ["string"]
 }
 
 Rules:
@@ -153,6 +159,7 @@ Rules:
       let improvementPointers = "";
       let fillerCount = 0;
       let gapAnalysis = "";
+      let catchphrases: string[] = [];
 
       const raw = response.choices[0].message.content || "{}";
       console.log("DEBUG: RAW AI RESPONSE:", raw);
@@ -175,13 +182,15 @@ Rules:
       improvementPointers = analysis.improvementPointers ?? "";
       fillerCount = analysis.fillerCount ?? 0;
       gapAnalysis = analysis.gapAnalysis ?? "";
+      catchphrases = analysis.catchphrases ?? [];
 
       console.log("DEBUG: Parsed AI Analysis:", {
         score,
         speechClarity,
         confidence,
         structure,
-        fillerCount
+        fillerCount,
+        catchphrases
       });
      
       const updatedQuestion = await storage.updateQuestionWithAnswer(
@@ -195,7 +204,8 @@ Rules:
         suggestedAnswer,
         improvementPointers,
         fillerCount,
-        gapAnalysis
+        gapAnalysis,
+        catchphrases
       );
 
       // Logic for follow-up questions

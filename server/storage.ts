@@ -21,7 +21,8 @@ export interface IStorage {
     suggestedAnswer: string,
     improvementPointers: string,
     fillerCount?: number,
-    gapAnalysis?: string
+    gapAnalysis?: string,
+    catchphrases?: string[]
   ): Promise<typeof questions.$inferSelect>;
   resetQuestion(id: number): Promise<typeof questions.$inferSelect>;
 }
@@ -66,7 +67,8 @@ export class DatabaseStorage implements IStorage {
     suggestedAnswer: string,
     improvementPointers: string,
     fillerCount?: number,
-    gapAnalysis?: string
+    gapAnalysis?: string,
+    catchphrases?: string[]
   ) {
     const [result] = await db
       .update(questions)
@@ -81,6 +83,7 @@ export class DatabaseStorage implements IStorage {
         improvementPointers,
         fillerCount: fillerCount ?? 0,
         gapAnalysis: gapAnalysis ?? "",
+        catchphrases: catchphrases ?? [],
         status: "completed"
       })
       .where(eq(questions.id, id))
@@ -102,6 +105,7 @@ export class DatabaseStorage implements IStorage {
         improvementPointers: null, 
         fillerCount: null,
         gapAnalysis: null,
+        catchphrases: null,
         status: "pending" 
       })
       .where(eq(questions.id, id))

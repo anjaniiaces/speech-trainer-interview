@@ -215,6 +215,16 @@ export default function QuestionSession() {
                       <p className="text-sm italic">{question.gapAnalysis}</p>
                     </div>
                   )}
+                  {question.catchphrases && question.catchphrases.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground w-full mb-1">Catchphrases Detected:</span>
+                      {question.catchphrases.map((phrase, i) => (
+                        <span key={i} className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
+                          "{phrase}"
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

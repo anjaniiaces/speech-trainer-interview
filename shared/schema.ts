@@ -25,6 +25,7 @@ export const questions = pgTable("questions", {
 
   fillerCount: integer("filler_count"),
   gapAnalysis: text("gap_analysis"),
+  catchphrases: text("catchphrases").array(),
 
   status: text("status"),
 });
