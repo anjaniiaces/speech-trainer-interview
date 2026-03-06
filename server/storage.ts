@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { interviews, questions, type InsertInterview, type InsertQuestion } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getInterviews(): Promise<typeof interviews.$inferSelect[]>;
@@ -11,19 +11,24 @@ export interface IStorage {
   getQuestion(id: number): Promise<typeof questions.$inferSelect | undefined>;
   createQuestion(question: InsertQuestion): Promise<typeof questions.$inferSelect>;
   updateQuestionWithAnswer(
-    id: number,
-    transcript: string,
-    feedback: string,
+    id: number, 
+    transcript: string, 
+    feedback: string, 
     score: number,
     speechClarity: number,
     confidence: number,
-    structure: number
+    structure: number,
+    suggestedAnswer: string,
+    improvementPointers: string,
+    fillerCount?: number,
+    gapAnalysis?: string
   ): Promise<typeof questions.$inferSelect>;
+  resetQuestion(id: number): Promise<typeof questions.$inferSelect>;
 }
 
 export class DatabaseStorage implements IStorage {
   async getInterviews() {
-    return await db.select().from(interviews);
+    return await db.select().from(interviews).orderBy(desc(interviews.createdAt));
   }
 
   async getInterview(id: number) {
@@ -37,7 +42,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getQuestions(interviewId: number) {
-    return await db.select().from(questions).where(eq(questions.interviewId, interviewId));
+    return await db.select().from(questions).where(eq(questions.interviewId, interviewId)).orderBy(questions.id);
   }
 
   async getQuestion(id: number) {
@@ -46,59 +51,62 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createQuestion(question: InsertQuestion) {
-    const [created] = await db.insert(questions).values(question).returning();
+    const [created] = await db.insert(questions).values({ ...question, status: 'pending' }).returning();
     return created;
   }
 
   async updateQuestionWithAnswer(
-    id: number,
-    transcript: string,
-    feedback: string,
+    id: number, 
+    transcript: string, 
+    feedback: string, 
     score: number,
     speechClarity: number,
     confidence: number,
     structure: number,
-    suggestedAnswer?: string,
-    improvementPointers?: string
+    suggestedAnswer: string,
+    improvementPointers: string,
+    fillerCount?: number,
+    gapAnalysis?: string
   ) {
-    console.log("UPDATE PAYLOAD:", {
-      id,
-      transcript: transcript.substring(0, 20) + "...",
-      feedback: feedback.substring(0, 20) + "...",
-      score,
-      speechClarity,
-      confidence,
-      structure,
-      suggestedAnswer: suggestedAnswer?.substring(0, 20) + "...",
-      improvementPointers: improvementPointers?.substring(0, 20) + "..."
-    });
-
-    const result = await db
+    const [result] = await db
       .update(questions)
       .set({
-        transcript: transcript,
-        feedback: feedback,
-        score: score,
-        speechClarity: speechClarity,
-        confidence: confidence,
-        structure: structure,
-        suggestedAnswer: suggestedAnswer,
-        improvementPointers: improvementPointers,
+        transcript,
+        feedback,
+        score,
+        speechClarity,
+        confidence,
+        structure,
+        suggestedAnswer,
+        improvementPointers,
+        fillerCount: fillerCount ?? 0,
+        gapAnalysis: gapAnalysis ?? "",
         status: "completed"
       })
       .where(eq(questions.id, id))
       .returning();
 
-    console.log("DB UPDATE RESULT:", result);
+    return result;
+  }
 
-    const verify = await db
-      .select()
-      .from(questions)
-      .where(eq(questions.id, id));
-
-    console.log("DB VERIFY RESULT:", verify);
-
-    return result[0];
+  async resetQuestion(id: number) {
+    const [updated] = await db.update(questions)
+      .set({ 
+        transcript: null, 
+        feedback: null, 
+        score: null, 
+        speechClarity: null, 
+        confidence: null, 
+        structure: null, 
+        suggestedAnswer: null, 
+        improvementPointers: null, 
+        fillerCount: null,
+        gapAnalysis: null,
+        status: "pending" 
+      })
+      .where(eq(questions.id, id))
+      .returning();
+    return updated;
   }
 }
 

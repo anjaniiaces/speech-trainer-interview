@@ -23,6 +23,9 @@ export const questions = pgTable("questions", {
   suggestedAnswer: text("suggested_answer"),
   improvementPointers: text("improvement_pointers"),
 
+  fillerCount: integer("filler_count"),
+  gapAnalysis: text("gap_analysis"),
+
   status: text("status"),
 });
 export const insertInterviewSchema = createInsertSchema(interviews).pick({ role: true });

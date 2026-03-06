@@ -159,6 +159,12 @@ export default function QuestionSession() {
                     <span>{question.structure ?? "-"} / 10</span>
                   </div>
 
+                  <div className="flex justify-between border-t border-white/5 pt-2 mt-2">
+                    <span className="text-muted-foreground">Filler Words</span>
+                    <span className={question.fillerCount && question.fillerCount > 5 ? "text-red-400" : "text-green-400"}>
+                      {question.fillerCount ?? 0}
+                    </span>
+                  </div>
                 </div>
               </div>
               {/* Feedback Card */}
@@ -167,10 +173,16 @@ export default function QuestionSession() {
                   <BrainCircuit className="w-12 h-12" />
                 </div>
                 <h3 className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">AI Analysis</h3>
-                <div className="prose prose-invert max-w-none">
+                <div className="prose prose-invert max-w-none space-y-4">
                   <p className="text-lg leading-relaxed text-foreground/90 font-medium">
                     {question.feedback || "No feedback generated."}
                   </p>
+                  {question.gapAnalysis && (
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                      <p className="text-sm text-muted-foreground">Speech Gap Analysis:</p>
+                      <p className="text-sm italic">{question.gapAnalysis}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

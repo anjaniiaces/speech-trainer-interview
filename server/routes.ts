@@ -124,7 +124,11 @@ The JSON MUST include these fields:
   "score": number,
   "speechClarity": number,
   "confidence": number,
-  "structure": number
+  "structure": number,
+  "suggestedAnswer": "STAR model answer",
+  "improvementPointers": "improvement pointers",
+  "fillerCount": number,
+  "gapAnalysis": "Analysis of gaps and pauses in speech"
 }
 
 Rules:
@@ -147,6 +151,8 @@ Rules:
       let structure = 0;
       let suggestedAnswer = "";
       let improvementPointers = "";
+      let fillerCount = 0;
+      let gapAnalysis = "";
 
       const raw = response.choices[0].message.content || "{}";
       console.log("DEBUG: RAW AI RESPONSE:", raw);
@@ -167,12 +173,15 @@ Rules:
       structure = analysis.structure ?? 0;
       suggestedAnswer = analysis.suggestedAnswer ?? "";
       improvementPointers = analysis.improvementPointers ?? "";
+      fillerCount = analysis.fillerCount ?? 0;
+      gapAnalysis = analysis.gapAnalysis ?? "";
 
       console.log("DEBUG: Parsed AI Analysis:", {
         score,
         speechClarity,
         confidence,
-        structure
+        structure,
+        fillerCount
       });
      
       const updatedQuestion = await storage.updateQuestionWithAnswer(
@@ -184,8 +193,23 @@ Rules:
         confidence,
         structure,
         suggestedAnswer,
-        improvementPointers
+        improvementPointers,
+        fillerCount,
+        gapAnalysis
       );
+
+      // Logic for follow-up questions
+      if (score > 70) {
+        const followUpPrompt = `Based on the candidate's answer: "${input.transcript}", generate a challenging follow-up question. Return ONLY the question text as a string.`;
+        const followUpRes = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: followUpPrompt }],
+        });
+        const followUpText = followUpRes.choices[0].message.content;
+        if (followUpText) {
+          await storage.createQuestion({ interviewId: question.interviewId, questionText: followUpText });
+        }
+      }
 
       console.log("DEBUG: Updated Question from Storage:", updatedQuestion);
 
@@ -202,22 +226,13 @@ Rules:
   });
 
   app.post("/api/questions/:id/reset", async (req, res) => {
-    const questionId = Number(req.params.id);
-    const [updated] = await db.update(questions)
-      .set({ 
-        transcript: null, 
-        feedback: null, 
-        score: null, 
-        speechClarity: null, 
-        confidence: null, 
-        structure: null, 
-        suggestedAnswer: null, 
-        improvementPointers: null, 
-        status: "pending" 
-      })
-      .where(eq(questions.id, questionId))
-      .returning();
-    res.json(updated);
+    try {
+      const questionId = Number(req.params.id);
+      const updated = await storage.resetQuestion(questionId);
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to reset question" });
+    }
   });
 
   // Seed initial data if none exists
