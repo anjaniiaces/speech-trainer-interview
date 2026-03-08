@@ -49,16 +49,20 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
 
     recognition.onresult = (event: any) => {
       let interimTranscript = "";
-      let finalTranscript = "";
+      let finalTranscript = finalTranscriptRef.current;
 
-      for (let i = 0; i < event.results.length; ++i) {
+      // Only process from the current result index to avoid duplicates on mobile
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + " ";
+          finalTranscript += transcript + " ";
         } else {
-          interimTranscript += event.results[i][0].transcript;
+          interimTranscript += transcript;
         }
       }
 
+      finalTranscriptRef.current = finalTranscript;
       setTranscript(finalTranscript + interimTranscript);
     };
 
@@ -120,18 +124,18 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
   }
 
   return (
-    <div className="flex flex-col items-center w-full max-w-2xl mx-auto space-y-8">
+    <div className="flex flex-col items-center w-full max-w-2xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-0">
       
       {/* Transcript Display Area */}
       <div className="w-full relative">
-        <div className={`min-h-[200px] w-full p-6 rounded-2xl glass-card transition-all duration-500 ${isRecording ? 'border-primary/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]' : ''}`}>
+        <div className={`min-h-[150px] sm:min-h-[200px] w-full p-4 sm:p-6 rounded-2xl glass-card transition-all duration-500 ${isRecording ? 'border-primary/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]' : ''}`}>
           {transcript ? (
-            <p className="text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+            <p className="text-base sm:text-lg leading-relaxed text-foreground whitespace-pre-wrap break-words">
               {transcript}
             </p>
           ) : (
             <div className="h-full flex items-center justify-center text-muted-foreground/60">
-              <p className="text-center font-medium">
+              <p className="text-center font-medium text-sm sm:text-base">
                 {isRecording ? "Listening..." : "Your answer will appear here..."}
               </p>
             </div>
@@ -160,12 +164,12 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
         <button
           onClick={toggleRecording}
           disabled={isProcessing}
           className={`
-            relative group flex items-center justify-center w-20 h-20 rounded-full
+            relative group flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 rounded-full
             transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
             ${isRecording 
               ? 'bg-red-500 hover:bg-red-600 text-white animate-record-pulse' 
@@ -174,9 +178,9 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
           `}
         >
           {isRecording ? (
-            <Square className="w-8 h-8 fill-current" />
+            <Square className="w-6 sm:w-8 h-6 sm:h-8 fill-current" />
           ) : (
-            <Mic className="w-8 h-8" />
+            <Mic className="w-6 sm:w-8 h-6 sm:h-8" />
           )}
         </button>
 
@@ -186,16 +190,17 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
               initial={{ opacity: 0, x: -20, width: 0 }}
               animate={{ opacity: 1, x: 0, width: 'auto' }}
               exit={{ opacity: 0, x: -20, width: 0 }}
+              className="w-full sm:w-auto"
             >
               <Button 
                 onClick={handleSubmit} 
                 disabled={isProcessing || transcript.trim().length === 0 || isRecording}
                 size="lg"
-                className="h-14 px-8 rounded-xl font-semibold bg-white text-black hover:bg-white/90 shadow-xl"
+                className="h-12 sm:h-14 px-6 sm:px-8 rounded-xl font-semibold bg-white text-black hover:bg-white/90 shadow-xl w-full sm:w-auto text-sm sm:text-base"
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin text-primary" />
+                    <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 mr-2 animate-spin text-primary" />
                     Analyzing...
                   </>
                 ) : (
@@ -207,7 +212,7 @@ export function SpeechRecorder({ onComplete, isProcessing }: SpeechRecorderProps
         </AnimatePresence>
       </div>
       
-      <p className="text-sm text-muted-foreground text-center max-w-md">
+      <p className="text-xs sm:text-sm text-muted-foreground text-center max-w-md px-2">
         {isRecording 
           ? "Speak clearly into your microphone. Click the stop button when finished." 
           : "Click the microphone to start recording your answer."}

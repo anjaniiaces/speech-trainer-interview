@@ -139,14 +139,14 @@ export default function QuestionSession() {
             className="space-y-8 mt-8"
           >
             {/* Results Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               
               {/* Score Card */}
-              <div className="glass-panel p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden">
+              <div className="glass-panel p-4 sm:p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-                <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-6">Overall Score</h3>
+                <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-4 sm:mb-6">Overall Score</h3>
                 
-                <div className="relative w-32 h-32 flex items-center justify-center">
+                <div className="relative w-24 sm:w-32 h-24 sm:h-32 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     {/* Background track */}
                     <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="8" fill="none" className="text-white/5" />
@@ -164,17 +164,17 @@ export default function QuestionSession() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-4xl font-display font-bold text-foreground">{score}</span>
+                    <span className="text-2xl sm:text-4xl font-display font-bold text-foreground">{score}</span>
                   </div>
                 </div>
               </div>
               {/* Speech Coaching Scores */}
-              <div className="glass-panel p-6 rounded-3xl mt-6">
+              <div className="glass-panel p-4 sm:p-6 rounded-3xl">
                 <h3 className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">
                   Speech Coaching
                 </h3>
 
-                <div className="space-y-3 text-sm">
+                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
 
                   <div className="flex justify-between">
                     <span>Speech Clarity</span>
@@ -200,13 +200,13 @@ export default function QuestionSession() {
                 </div>
               </div>
               {/* Feedback Card */}
-              <div className="md:col-span-2 glass-panel p-8 rounded-3xl relative">
+              <div className="col-span-1 md:col-span-2 glass-panel p-4 sm:p-8 rounded-3xl relative">
                 <div className="absolute top-6 right-6 text-primary/20">
                   <BrainCircuit className="w-12 h-12" />
                 </div>
-                <h3 className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">AI Analysis</h3>
+                <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-primary mb-4">AI Analysis</h3>
                 <div className="prose prose-invert max-w-none space-y-4">
-                  <p className="text-lg leading-relaxed text-foreground/90 font-medium">
+                  <p className="text-sm sm:text-lg leading-relaxed text-foreground/90 font-medium">
                     {question.feedback || "No feedback generated."}
                   </p>
                   {question.gapAnalysis && (
