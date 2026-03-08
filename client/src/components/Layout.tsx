@@ -20,10 +20,10 @@ export function Layout({ children }: LayoutProps) {
               <Mic2 className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="font-display font-bold text-lg leading-tight text-gradient">Aura</h1>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Speech Trainer</p>
+              <h1 className="font-display font-bold text-lg leading-tight text-gradient">Uttarayan</h1>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Interview Coach</p>
             </div>
-            <h1 className="sm:hidden font-display font-bold text-base text-gradient">Aura</h1>
+            <h1 className="sm:hidden font-display font-bold text-base text-gradient">Uttarayan</h1>
           </Link>
           
           <div className="flex items-center gap-4">
@@ -46,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
       </main>
       
       <footer className="py-6 text-center text-sm text-muted-foreground border-t border-white/5">
-        <p>© {new Date().getFullYear()} Aura AI Interview Trainer</p>
+        <p>© {new Date().getFullYear()} Uttarayan Interview Coach</p>
       </footer>
     </div>
   );
