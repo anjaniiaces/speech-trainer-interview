@@ -28,7 +28,7 @@ export async function registerRoutes(
     res.json(interview);
   });
 
-  app.post(api.interviews.create.path, async (req, res) => {
+    app.post("/api/questions/:id/answer", async (req, res) => {
     try {
       const input = api.interviews.create.input.parse(req.body);
       const interview = await storage.createInterview(input);
