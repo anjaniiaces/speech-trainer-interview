@@ -6,89 +6,137 @@ import { z } from "zod";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  defaultQuery: { "api-version": "2024-02-15-preview" },
-  defaultHeaders: { "api-key": process.env.AI_INTEGRATIONS_OPENAI_API_KEY },
+apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+defaultQuery: { "api-version": "2024-02-15-preview" },
+defaultHeaders: { "api-key": process.env.AI_INTEGRATIONS_OPENAI_API_KEY },
 });
+
 export async function registerRoutes(
-  httpServer: Server,
-  app: Express
+httpServer: Server,
+app: Express
 ): Promise<Server> {
+
+/* --------------------------------------------------
+RESUME DOWNLOAD API  (NEW)
+-------------------------------------------------- */
+
+app.get("/api/resume/download", async (req, res) => {
+
+```
+const resumeText = `
+```
+
+Optimized Resume
+
+Candidate Name
+
+## Experience
+
+Sales Executive – ABC Company
+• Increased sales by 30%
+• Managed CRM pipeline
+• Built B2B client relationships
+
+## Skills
+
+CRM
+Pipeline Management
+Lead Conversion
+`;
+
+```
+res.setHeader("Content-Type", "application/pdf");
+res.setHeader(
+  "Content-Disposition",
+  "attachment; filename=optimized_resume.pdf"
+);
+
+res.send(Buffer.from(resumeText));
+```
+
+});
+
+/* --------------------------------------------------
+INTERVIEW APIs
+-------------------------------------------------- */
+
+app.get(api.interviews.list.path, async (req, res) => {
+const interviews = await storage.getInterviews();
+res.json(interviews);
+});
+
+app.get(api.interviews.get.path, async (req, res) => {
+const interview = await storage.getInterview(Number(req.params.id));
+if (!interview) {
+return res.status(404).json({ message: 'Interview not found' });
+}
+res.json(interview);
+});
+
+app.post("/api/interviews", async (req, res) => {
+try {
+const input = api.interviews.create.input.parse(req.body);
+const interview = await storage.createInterview(input);
+
+````
+  const prompt = `Generate 5 standard behavioral interview questions for a ${input.role} position. Format the output as a JSON array of strings. Only return the JSON array, no other text.`;
   
-  app.get(api.interviews.list.path, async (req, res) => {
-    const interviews = await storage.getInterviews();
-    res.json(interviews);
+  const response = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    messages: [{ role: "user", content: prompt }],
   });
+  
+  let questionsList = [];
+  try {
+    const content = response.choices[0]?.message?.content || "[]";
+    const cleanedContent = content.replace(/```json\n|\n```|```/g, '');
+    questionsList = JSON.parse(cleanedContent);
+  } catch (e) {
+    questionsList = [
+      "Tell me about a time you faced a difficult challenge at work.",
+      "Describe a situation where you had to work with a difficult team member.",
+      "Where do you see yourself in 5 years?"
+    ];
+  }
+  
+  for (const q of questionsList) {
+    await storage.createQuestion({ interviewId: interview.id, questionText: q });
+  }
 
-  app.get(api.interviews.get.path, async (req, res) => {
-    const interview = await storage.getInterview(Number(req.params.id));
-    if (!interview) {
-      return res.status(404).json({ message: 'Interview not found' });
-    }
-    res.json(interview);
-  });
+  res.status(201).json(interview);
+} catch (err) {
+  if (err instanceof z.ZodError) {
+    return res.status(400).json({
+      message: err.errors[0].message,
+      field: err.errors[0].path.join('.'),
+    });
+  }
+  throw err;
+}
+````
 
-    app.post("/api/interviews", async (req, res) => {
-    try {
-      const input = api.interviews.create.input.parse(req.body);
-      const interview = await storage.createInterview(input);
-      
-      // Generate some default questions for the role
-      const prompt = `Generate 5 standard behavioral interview questions for a ${input.role} position. Format the output as a JSON array of strings. Only return the JSON array, no other text.`;
-      
-      const response = await openai.chat.completions.create({
-        model: "gpt-4.1",
-        messages: [{ role: "user", content: prompt }],
-      });
-      
-      let questionsList = [];
-      try {
-        const content = response.choices[0]?.message?.content || "[]";
-        // Clean up markdown code blocks if present
-        const cleanedContent = content.replace(/```json\n|\n```|```/g, '');
-        questionsList = JSON.parse(cleanedContent);
-      } catch (e) {
-        questionsList = [
-          "Tell me about a time you faced a difficult challenge at work.",
-          "Describe a situation where you had to work with a difficult team member.",
-          "Where do you see yourself in 5 years?"
-        ];
-      }
-      
-      for (const q of questionsList) {
-        await storage.createQuestion({ interviewId: interview.id, questionText: q });
-      }
+});
 
-      res.status(201).json(interview);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
-      }
-      throw err;
-    }
-  });
+app.get(api.questions.list.path, async (req, res) => {
+const questions = await storage.getQuestions(Number(req.params.interviewId));
+res.json(questions);
+});
 
-  app.get(api.questions.list.path, async (req, res) => {
-    const questions = await storage.getQuestions(Number(req.params.interviewId));
-    res.json(questions);
-  });
+app.post(api.questions.answer.path, async (req, res) => {
+try {
+const input = api.questions.answer.input.parse(req.body);
+const questionId = Number(req.params.id);
 
-  app.post(api.questions.answer.path, async (req, res) => {
-    try {
-      const input = api.questions.answer.input.parse(req.body);
-      const questionId = Number(req.params.id);
-      
-      const question = await storage.getQuestion(questionId);
-      if (!question) {
-        return res.status(404).json({ message: 'Question not found' });
-      }
+```
+  const question = await storage.getQuestion(questionId);
+  if (!question) {
+    return res.status(404).json({ message: 'Question not found' });
+  }
 
-      // Analyze transcript with OpenAI
-              const prompt = `
+  const prompt = `
+```
+
 You are an expert speech therapist, communication coach, and interview mentor.
 
 The candidate was asked the interview question:
@@ -100,159 +148,124 @@ The candidate responded with this transcript from a spoken answer:
 Evaluate the candidate on the following dimensions:
 
 1. Speech Delivery
-- clarity of expression
-- pacing and fluency
-- filler words or hesitation
-- confidence in communication
-- Identify recurring catchphrases or "pet phrases" (e.g., constant use of "basically", "you know", "actually")
+
+* clarity of expression
+* pacing and fluency
+* filler words or hesitation
+* confidence in communication
+* Identify recurring catchphrases or "pet phrases"
 
 2. Interview Answer Quality
-- relevance to the question
-- logical structure (STAR method if applicable)
-- strength of example
-- impact and outcome
+
+* relevance to the question
+* logical structure (STAR method if applicable)
+* strength of example
+* impact and outcome
 
 3. Professional Communication
-- vocabulary and professionalism
-- conciseness
-- persuasiveness
 
-Important: 
-- If the score is > 50, start the "feedback" with a highly positive, encouraging statement to bolster their confidence (e.g., "Excellent progress! You're showing great potential...").
-- If this is a "Try Again" attempt (the user is re-answering) and they improved their score, start with an even more enthusiastic acknowledgement of their growth.
+* vocabulary and professionalism
+* conciseness
+* persuasiveness
 
 Return ONLY valid JSON.
 
-The JSON MUST include these fields:
-
 {
-  "feedback": "string",
-  "score": number,
-  "speechClarity": number,
-  "confidence": number,
-  "structure": number,
-  "suggestedAnswer": "STAR model answer",
-  "improvementPointers": "improvement pointers",
-  "fillerCount": number,
-  "gapAnalysis": "Analysis of gaps and pauses in speech",
-  "catchphrases": ["string"]
+"feedback": "string",
+"score": number,
+"speechClarity": number,
+"confidence": number,
+"structure": number,
+"suggestedAnswer": "STAR model answer",
+"improvementPointers": "improvement pointers",
+"fillerCount": number,
+"gapAnalysis": "Analysis of gaps and pauses in speech",
+"catchphrases": ["string"]
 }
-
-Rules:
-- score must be between 0 and 100
-- speechClarity must be between 0 and 10
-- confidence must be between 0 and 10
-- structure must be between 0 and 10
-- Do not omit any field.
 `;
- 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        response_format: { type: "json_object" },
-        messages: [{ role: "user", content: prompt }],
-      });
-      let feedback = "No feedback generated.";
-      let score = 0;
-      let speechClarity = 0;
-      let confidence = 0;
-      let structure = 0;
-      let suggestedAnswer = "";
-      let improvementPointers = "";
-      let fillerCount = 0;
-      let gapAnalysis = "";
-      let catchphrases: string[] = [];
 
-      const raw = response.choices[0].message.content || "{}";
-      console.log("DEBUG: RAW AI RESPONSE:", raw);
-
-      let analysis: any = {};
-
-      try {
-        const cleanedRaw = raw.replace(/```json\n|\n```|```/g, '').trim();
-        analysis = JSON.parse(cleanedRaw);
-      } catch (e) {
-        console.error("DEBUG: JSON parse failed", e);
-      }
-
-      feedback = analysis.feedback ?? "No feedback generated";
-      score = analysis.score ?? 0;
-      speechClarity = analysis.speechClarity ?? 0;
-      confidence = analysis.confidence ?? 0;
-      structure = analysis.structure ?? 0;
-      suggestedAnswer = analysis.suggestedAnswer ?? "";
-      improvementPointers = analysis.improvementPointers ?? "";
-      fillerCount = analysis.fillerCount ?? 0;
-      gapAnalysis = analysis.gapAnalysis ?? "";
-      catchphrases = analysis.catchphrases ?? [];
-
-      console.log("DEBUG: Parsed AI Analysis:", {
-        score,
-        speechClarity,
-        confidence,
-        structure,
-        fillerCount,
-        catchphrases
-      });
-     
-      const updatedQuestion = await storage.updateQuestionWithAnswer(
-        questionId,
-        input.transcript,
-        feedback,
-        score,
-        speechClarity,
-        confidence,
-        structure,
-        suggestedAnswer,
-        improvementPointers,
-        fillerCount,
-        gapAnalysis,
-        catchphrases
-      );
-
-      // Logic for follow-up questions
-      if (score > 70) {
-        const followUpPrompt = `Based on the candidate's answer: "${input.transcript}", generate a challenging follow-up question. Return ONLY the question text as a string.`;
-        const followUpRes = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{ role: "user", content: followUpPrompt }],
-        });
-        const followUpText = followUpRes.choices[0].message.content;
-        if (followUpText) {
-          await storage.createQuestion({ interviewId: question.interviewId, questionText: followUpText });
-        }
-      }
-
-      console.log("DEBUG: Updated Question from Storage:", updatedQuestion);
-
-      res.status(200).json(updatedQuestion);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
-      }
-      throw err;
-    }
+````
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    messages: [{ role: "user", content: prompt }],
   });
 
-  app.post("/api/questions/:id/reset", async (req, res) => {
-    try {
-      const questionId = Number(req.params.id);
-      const updated = await storage.resetQuestion(questionId);
-      res.json(updated);
-    } catch (err) {
-      res.status(500).json({ message: "Failed to reset question" });
-    }
-  });
+  const raw = response.choices[0].message.content || "{}";
+  console.log("DEBUG: RAW AI RESPONSE:", raw);
 
-  // Seed initial data if none exists
-  const existingInterviews = await storage.getInterviews();
-  if (existingInterviews.length === 0) {
-    const interview = await storage.createInterview({ role: "Software Engineer" });
-    await storage.createQuestion({ interviewId: interview.id, questionText: "Tell me about a time you had to optimize a piece of code that was running too slowly." });
-    await storage.createQuestion({ interviewId: interview.id, questionText: "How do you handle disagreements with teammates on technical architecture?" });
+  let analysis: any = {};
+
+  try {
+    const cleanedRaw = raw.replace(/```json\n|\n```|```/g, '').trim();
+    analysis = JSON.parse(cleanedRaw);
+  } catch (e) {
+    console.error("DEBUG: JSON parse failed", e);
   }
 
-  return httpServer;
+  const updatedQuestion = await storage.updateQuestionWithAnswer(
+    questionId,
+    input.transcript,
+    analysis.feedback ?? "",
+    analysis.score ?? 0,
+    analysis.speechClarity ?? 0,
+    analysis.confidence ?? 0,
+    analysis.structure ?? 0,
+    analysis.suggestedAnswer ?? "",
+    analysis.improvementPointers ?? "",
+    analysis.fillerCount ?? 0,
+    analysis.gapAnalysis ?? "",
+    analysis.catchphrases ?? []
+  );
+
+  if (analysis.score > 70) {
+    const followUpPrompt = `Based on the candidate's answer: "${input.transcript}", generate a challenging follow-up question. Return ONLY the question text as a string.`;
+    const followUpRes = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: followUpPrompt }],
+    });
+    const followUpText = followUpRes.choices[0].message.content;
+    if (followUpText) {
+      await storage.createQuestion({ interviewId: question.interviewId, questionText: followUpText });
+    }
+  }
+
+  res.status(200).json(updatedQuestion);
+} catch (err) {
+  if (err instanceof z.ZodError) {
+    return res.status(400).json({
+      message: err.errors[0].message,
+      field: err.errors[0].path.join('.'),
+    });
+  }
+  throw err;
+}
+````
+
+});
+
+app.post("/api/questions/:id/reset", async (req, res) => {
+try {
+const questionId = Number(req.params.id);
+const updated = await storage.resetQuestion(questionId);
+res.json(updated);
+} catch (err) {
+res.status(500).json({ message: "Failed to reset question" });
+}
+});
+
+const existingInterviews = await storage.getInterviews();
+if (existingInterviews.length === 0) {
+const interview = await storage.createInterview({ role: "Software Engineer" });
+await storage.createQuestion({
+interviewId: interview.id,
+questionText: "Tell me about a time you had to optimize a piece of code that was running too slowly."
+});
+await storage.createQuestion({
+interviewId: interview.id,
+questionText: "How do you handle disagreements with teammates on technical architecture?"
+});
+}
+
+return httpServer;
 }
