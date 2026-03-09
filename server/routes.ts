@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
+import PDFDocument from "pdfkit";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -21,35 +22,45 @@ export async function registerRoutes(
    RESUME DOWNLOAD API
 ----------------------------- */
 
+import PDFDocument from "pdfkit";
+
 app.get("/api/resume/download", async (req, res) => {
 
-  const resumeText = `
-Optimized Resume
+  const doc = new PDFDocument();
 
-Candidate Name
-
-Experience
----------
-Sales Executive – ABC Company
-• Increased sales by 30%
-• Managed CRM pipeline
-• Built B2B client relationships
-
-Skills
-------
-CRM
-Pipeline Management
-Lead Conversion
-`;
-
+  res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    "attachment; filename=optimized_resume.txt"
+    "attachment; filename=optimized_resume.pdf"
   );
 
-  res.send(resumeText);
+  doc.pipe(res);
+
+  doc.fontSize(20).text("Optimized Resume", { align: "center" });
+
+  doc.moveDown();
+
+  doc.fontSize(14).text("Candidate Name");
+
+  doc.moveDown();
+
+  doc.text("Experience");
+  doc.text("Sales Executive – ABC Company");
+  doc.text("• Increased sales by 30%");
+  doc.text("• Managed CRM pipeline");
+  doc.text("• Built B2B client relationships");
+
+  doc.moveDown();
+
+  doc.text("Skills");
+  doc.text("• CRM");
+  doc.text("• Pipeline Management");
+  doc.text("• Lead Conversion");
+
+  doc.end();
 
 });
+
   /* -----------------------------
      INTERVIEW APIs
   ----------------------------- */
