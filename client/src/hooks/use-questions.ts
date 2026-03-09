@@ -58,8 +58,27 @@ export function useResetQuestion() {
       if (!res.ok) throw new Error("Failed to reset question");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/interviews'] });
-    },
-  });
-}
+    onSuccess: (data, variables) => {
+
+  queryClient.invalidateQueries({ queryKey: ['/api/interviews'] });
+
+  // send interview score to parent dashboard
+  if (window.parent) {
+
+    window.parent.postMessage({
+      type: "interviewScore",
+      score: data.score
+    }, "*");
+
+    const commScore = Math.round(
+      ((data.speechClarity + data.confidence + data.structure) / 30) * 100
+    );
+
+    window.parent.postMessage({
+      type: "communicationScore",
+      score: commScore
+    }, "*");
+
+  }
+
+},
