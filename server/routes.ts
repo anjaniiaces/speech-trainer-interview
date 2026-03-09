@@ -18,12 +18,12 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   /* -----------------------------
-     RESUME DOWNLOAD API
-  ----------------------------- */
+   RESUME DOWNLOAD API
+----------------------------- */
 
-  app.get("/api/resume/download", async (req, res) => {
+app.get("/api/resume/download", async (req, res) => {
 
-    const resumeText = `
+  const resumeText = `
 Optimized Resume
 
 Candidate Name
@@ -42,15 +42,14 @@ Pipeline Management
 Lead Conversion
 `;
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=optimized_resume.pdf"
-    );
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=optimized_resume.txt"
+  );
 
-    res.send(Buffer.from(resumeText));
-  });
+  res.send(resumeText);
 
+});
   /* -----------------------------
      INTERVIEW APIs
   ----------------------------- */
