@@ -82,3 +82,11 @@ export function useResetQuestion() {
   }
 
 },
+// notify dashboard interview finished
+if (data.status === "completed") {
+
+  window.parent.postMessage({
+    type: "interviewCompleted"
+  }, "*");
+
+}
