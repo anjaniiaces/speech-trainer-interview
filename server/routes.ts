@@ -7,79 +7,71 @@ import OpenAI from "openai";
 import PDFDocument from "pdfkit";
 
 const openai = new OpenAI({
-apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-defaultQuery: { "api-version": "2024-02-15-preview" },
-defaultHeaders: { "api-key": process.env.AI_INTEGRATIONS_OPENAI_API_KEY },
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  defaultQuery: { "api-version": "2024-02-15-preview" },
+  defaultHeaders: { "api-key": process.env.AI_INTEGRATIONS_OPENAI_API_KEY },
 });
 
 export async function registerRoutes(
-httpServer: Server,
-app: Express
+  httpServer: Server,
+  app: Express
 ): Promise<Server> {
 
-/* -----------------------------
-RESUME DOWNLOAD API
------------------------------ */
+  /* -----------------------------
+     RESUME DOWNLOAD
+  ----------------------------- */
 
-app.get("/api/resume/download", async (req, res) => {
+  app.get("/api/resume/download", async (req, res) => {
 
-```
-const doc = new PDFDocument();
+    const doc = new PDFDocument();
 
-res.setHeader("Content-Type", "application/pdf");
-res.setHeader(
-  "Content-Disposition",
-  "attachment; filename=optimized_resume.pdf"
-);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=optimized_resume.pdf"
+    );
 
-doc.pipe(res);
+    doc.pipe(res);
 
-doc.fontSize(20).text("Optimized Resume", { align: "center" });
+    doc.fontSize(20).text("Optimized Resume", { align: "center" });
 
-doc.moveDown();
+    doc.moveDown();
+    doc.fontSize(14).text("Candidate Name");
 
-doc.fontSize(14).text("Candidate Name");
+    doc.moveDown();
+    doc.text("Experience");
+    doc.text("Sales Executive – ABC Company");
+    doc.text("• Increased sales by 30%");
+    doc.text("• Managed CRM pipeline");
+    doc.text("• Built B2B client relationships");
 
-doc.moveDown();
+    doc.moveDown();
+    doc.text("Skills");
+    doc.text("• CRM");
+    doc.text("• Pipeline Management");
+    doc.text("• Lead Conversion");
 
-doc.text("Experience");
-doc.text("Sales Executive – ABC Company");
-doc.text("• Increased sales by 30%");
-doc.text("• Managed CRM pipeline");
-doc.text("• Built B2B client relationships");
+    doc.end();
+  });
 
-doc.moveDown();
 
-doc.text("Skills");
-doc.text("• CRM");
-doc.text("• Pipeline Management");
-doc.text("• Lead Conversion");
+  /* -----------------------------
+     ATS RESUME ANALYSIS
+  ----------------------------- */
 
-doc.end();
-```
+  app.post("/api/resume/analyze", async (req, res) => {
 
-});
+    try {
 
-/* -----------------------------
-ATS RESUME ANALYSIS
------------------------------ */
+      const { resumeText, jobDescription } = req.body;
 
-app.post("/api/resume/analyze", async (req, res) => {
-
-```
-try {
-
-  const { resumeText, jobDescription } = req.body;
-
-  const prompt = `
-```
-
+      const prompt = `
 You are an ATS system.
 
 Evaluate this resume against the job description.
 
-Return JSON:
+Return ONLY JSON:
 
 {
 "score": number,
@@ -95,134 +87,195 @@ Job Description:
 ${jobDescription}
 `;
 
-```
-  const response = await openai.chat.completions.create({
-    model: "gpt-4.1",
-    response_format: { type: "json_object" },
-    messages: [{ role: "user", content: prompt }],
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const raw = response.choices?.[0]?.message?.content || "{}";
+
+      let result: any = {};
+
+      try {
+        const cleaned = raw
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+
+        result = JSON.parse(cleaned);
+      } catch (e) {
+        console.error("ATS JSON parse error:", raw);
+
+        return res.status(500).json({
+          message: "ATS parse error",
+          raw
+        });
+      }
+
+      res.json(result);
+
+    } catch (err: any) {
+
+      console.error("ATS analysis failed:", err);
+
+      res.status(500).json({
+        message: "ATS analysis failed",
+        error: err?.message || err
+      });
+    }
+
   });
 
-  const result = JSON.parse(response.choices[0].message.content || "{}");
 
-  res.json(result);
+  /* -----------------------------
+     INTERVIEW APIs
+  ----------------------------- */
 
-} catch (err) {
+  app.get(api.interviews.list.path, async (req, res) => {
 
-  console.error("ATS analysis failed:", err);
+    const interviews = await storage.getInterviews();
 
- res.status(500).json({
-  message: "ATS analysis failed",
-  error: err?.message || err
-});
+    res.json(interviews);
 
-}
-```
-
-});
-
-/* -----------------------------
-INTERVIEW APIs
------------------------------ */
-
-app.get(api.interviews.list.path, async (req, res) => {
-const interviews = await storage.getInterviews();
-res.json(interviews);
-});
-
-app.get(api.interviews.get.path, async (req, res) => {
-const interview = await storage.getInterview(Number(req.params.id));
-if (!interview) {
-return res.status(404).json({ message: "Interview not found" });
-}
-res.json(interview);
-});
-
-app.post("/api/interviews", async (req, res) => {
-try {
-
-````
-  const input = api.interviews.create.input.parse(req.body);
-
-  const interview = await storage.createInterview(input);
-
-  const prompt = `Generate 5 behavioral interview questions for a ${input.role} position. Return JSON array.`;
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-4.1",
-    messages: [{ role: "user", content: prompt }],
   });
 
-  let questionsList = [];
 
-  try {
-    const content = response.choices[0]?.message?.content || "[]";
-    const cleanedContent = content.replace(/```json\n|\n```|```/g, "");
-    questionsList = JSON.parse(cleanedContent);
-  } catch {
-    questionsList = [
-      "Tell me about a time you faced a difficult challenge.",
-      "Describe a conflict with a team member.",
-      "Where do you see yourself in 5 years?",
-    ];
-  }
+  app.get(api.interviews.get.path, async (req, res) => {
 
-  for (const q of questionsList) {
-    await storage.createQuestion({
-      interviewId: interview.id,
-      questionText: q,
-    });
-  }
+    const interview = await storage.getInterview(Number(req.params.id));
 
-  res.status(201).json(interview);
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
 
-} catch (err) {
+    res.json(interview);
 
-  if (err instanceof z.ZodError) {
-    return res.status(400).json({
-      message: err.errors[0].message,
-      field: err.errors[0].path.join("."),
-    });
-  }
+  });
 
-  throw err;
-}
-````
 
-});
+  app.post("/api/interviews", async (req, res) => {
 
-app.get(api.questions.list.path, async (req, res) => {
-const questions = await storage.getQuestions(
-Number(req.params.interviewId)
-);
-res.json(questions);
-});
+    try {
 
-app.post(api.questions.answer.path, async (req, res) => {
+      const input = api.interviews.create.input.parse(req.body);
 
-```
-try {
+      const interview = await storage.createInterview(input);
 
-  const input = api.questions.answer.input.parse(req.body);
-  const questionId = Number(req.params.id);
+      const prompt = `Generate 5 behavioral interview questions for a ${input.role} position. Return JSON array.`;
 
-  const question = await storage.getQuestion(questionId);
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        messages: [{ role: "user", content: prompt }],
+      });
 
-  if (!question) {
-    return res.status(404).json({ message: "Question not found" });
-  }
+      let questionsList: string[] = [];
 
-  const prompt = `
-```
+      try {
 
-You are an expert interview coach.
+        const content = response.choices[0]?.message?.content || "[]";
 
-Question:
+        const cleanedContent = content.replace(/```json\n|\n```|```/g, "");
+
+        questionsList = JSON.parse(cleanedContent);
+
+      } catch {
+
+        questionsList = [
+          "Tell me about a time you faced a difficult challenge.",
+          "Describe a conflict with a team member.",
+          "Where do you see yourself in 5 years?"
+        ];
+
+      }
+
+      for (const q of questionsList) {
+
+        await storage.createQuestion({
+          interviewId: interview.id,
+          questionText: q
+        });
+
+      }
+
+      res.status(201).json(interview);
+
+    } catch (err) {
+
+      if (err instanceof z.ZodError) {
+
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join(".")
+        });
+
+      }
+
+      throw err;
+    }
+
+  });
+
+
+  app.get(api.questions.list.path, async (req, res) => {
+
+    const questions = await storage.getQuestions(
+      Number(req.params.interviewId)
+    );
+
+    res.json(questions);
+
+  });
+
+
+  /* -----------------------------
+     ANSWER ANALYSIS (AI COACH)
+  ----------------------------- */
+
+  app.post(api.questions.answer.path, async (req, res) => {
+
+    try {
+
+      const input = api.questions.answer.input.parse(req.body);
+
+      const questionId = Number(req.params.id);
+
+      const question = await storage.getQuestion(questionId);
+
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+
+      const prompt = `
+You are an expert speech therapist, communication coach, and interview mentor.
+
+The candidate was asked:
 "${question.questionText}"
 
-Answer:
+Candidate response transcript:
 "${input.transcript}"
 
-Return JSON with:
+Evaluate on:
+
+1 Speech Delivery
+- clarity
+- pacing
+- filler words
+- confidence
+- detect catchphrases
+
+2 Interview Quality
+- relevance
+- structure (STAR method)
+- strength of example
+- impact
+
+3 Professional Communication
+- vocabulary
+- conciseness
+- persuasion
+
+Return JSON:
 
 {
 "feedback": "string",
@@ -230,7 +283,7 @@ Return JSON with:
 "speechClarity": number,
 "confidence": number,
 "structure": number,
-"suggestedAnswer": "string",
+"suggestedAnswer": "STAR model answer",
 "improvementPointers": "string",
 "fillerCount": number,
 "gapAnalysis": "string",
@@ -238,73 +291,116 @@ Return JSON with:
 }
 `;
 
-````
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    response_format: { type: "json_object" },
-    messages: [{ role: "user", content: prompt }],
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const raw = response.choices?.[0]?.message?.content || "{}";
+
+      let analysis: any = {};
+
+      try {
+
+        const cleaned = raw.replace(/```json\n|\n```|```/g, "").trim();
+
+        analysis = JSON.parse(cleaned);
+
+      } catch {}
+
+      const updatedQuestion = await storage.updateQuestionWithAnswer(
+        questionId,
+        input.transcript,
+        analysis.feedback ?? "",
+        analysis.score ?? 0,
+        analysis.speechClarity ?? 0,
+        analysis.confidence ?? 0,
+        analysis.structure ?? 0,
+        analysis.suggestedAnswer ?? "",
+        analysis.improvementPointers ?? "",
+        analysis.fillerCount ?? 0,
+        analysis.gapAnalysis ?? "",
+        analysis.catchphrases ?? []
+      );
+
+
+      /* -----------------------------
+         FOLLOW UP QUESTION
+      ----------------------------- */
+
+      if (analysis.score > 70) {
+
+        const followUpPrompt = `
+Based on this answer:
+
+"${input.transcript}"
+
+Generate ONE challenging follow-up interview question.
+
+Return only the question.
+`;
+
+        const followUpRes = await openai.chat.completions.create({
+          model: "gpt-4.1",
+          messages: [{ role: "user", content: followUpPrompt }],
+        });
+
+        const followUpText = followUpRes.choices[0]?.message?.content;
+
+        if (followUpText) {
+
+          await storage.createQuestion({
+            interviewId: question.interviewId,
+            questionText: followUpText
+          });
+
+        }
+
+      }
+
+      res.json(updatedQuestion);
+
+    } catch (err) {
+
+      if (err instanceof z.ZodError) {
+
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join(".")
+        });
+
+      }
+
+      throw err;
+    }
+
   });
 
-  const raw = response.choices[0].message.content || "{}";
 
-  let analysis: any = {};
+  /* -----------------------------
+     RESET QUESTION
+  ----------------------------- */
 
-  try {
-    const cleaned = raw.replace(/```json\n|\n```|```/g, "").trim();
-    analysis = JSON.parse(cleaned);
-  } catch {}
+  app.post("/api/questions/:id/reset", async (req, res) => {
 
-  const updatedQuestion = await storage.updateQuestionWithAnswer(
-    questionId,
-    input.transcript,
-    analysis.feedback ?? "",
-    analysis.score ?? 0,
-    analysis.speechClarity ?? 0,
-    analysis.confidence ?? 0,
-    analysis.structure ?? 0,
-    analysis.suggestedAnswer ?? "",
-    analysis.improvementPointers ?? "",
-    analysis.fillerCount ?? 0,
-    analysis.gapAnalysis ?? "",
-    analysis.catchphrases ?? []
-  );
+    try {
 
-  res.json(updatedQuestion);
+      const questionId = Number(req.params.id);
 
-} catch (err) {
+      const updated = await storage.resetQuestion(questionId);
 
-  if (err instanceof z.ZodError) {
-    return res.status(400).json({
-      message: err.errors[0].message,
-      field: err.errors[0].path.join("."),
-    });
-  }
+      res.json(updated);
 
-  throw err;
-}
-````
+    } catch {
 
-});
+      res.status(500).json({ message: "Failed to reset question" });
 
-app.post("/api/questions/:id/reset", async (req, res) => {
+    }
 
-```
-try {
+  });
 
-  const questionId = Number(req.params.id);
 
-  const updated = await storage.resetQuestion(questionId);
+  return httpServer;
 
-  res.json(updated);
-
-} catch {
-
-  res.status(500).json({ message: "Failed to reset question" });
-
-}
-```
-
-});
-
-return httpServer;
 }
