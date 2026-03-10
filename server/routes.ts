@@ -110,7 +110,10 @@ ${jobDescription}
 
   console.error("ATS analysis failed:", err);
 
-  res.status(500).json({ message: "ATS analysis failed" });
+ res.status(500).json({
+  message: "ATS analysis failed",
+  error: err?.message || err
+});
 
 }
 ```
