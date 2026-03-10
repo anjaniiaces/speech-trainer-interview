@@ -58,7 +58,7 @@ export function useResetQuestion() {
       if (!res.ok) throw new Error("Failed to reset question");
       return res.json();
     },
-    onSuccess: (data, variables) => {
+   onSuccess: (data, variables) => {
 
   queryClient.invalidateQueries({ queryKey: ['/api/interviews'] });
 
@@ -79,14 +79,13 @@ export function useResetQuestion() {
       score: commScore
     }, "*");
 
+    // notify dashboard interview finished
+    if (data.status === "completed") {
+      window.parent.postMessage({
+        type: "interviewCompleted"
+      }, "*");
+    }
+
   }
 
 },
-// notify dashboard interview finished
-if (data.status === "completed") {
-
-  window.parent.postMessage({
-    type: "interviewCompleted"
-  }, "*");
-
-}
