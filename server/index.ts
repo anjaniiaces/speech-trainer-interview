@@ -17,7 +17,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type","Authorization"]
 }));
 
-app.options("/*", cors());
 const httpServer = createServer(app);
 
 declare module "http" {
