@@ -9,7 +9,7 @@ import PDFDocument from "pdfkit";
 const openai = new OpenAI({
 apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-defaultQuery: { "gpt-4.1": "2024-02-15-preview" },
+defaultQuery: { "api-version": "2024-02-15-preview" },
 defaultHeaders: { "api-key": process.env.AI_INTEGRATIONS_OPENAI_API_KEY },
 });
 
@@ -97,7 +97,7 @@ ${jobDescription}
 
 ```
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1",
     response_format: { type: "json_object" },
     messages: [{ role: "user", content: prompt }],
   });
