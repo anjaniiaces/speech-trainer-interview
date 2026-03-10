@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config({ path: './server/.env' }); 
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+// only if your .env is inside /server
+
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
@@ -12,7 +17,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type","Authorization"]
 }));
 
-app.options("/:path(*)", cors());
+app.options("/*", cors());
 const httpServer = createServer(app);
 
 declare module "http" {
