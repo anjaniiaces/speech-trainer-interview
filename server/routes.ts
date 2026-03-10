@@ -62,9 +62,11 @@ export async function registerRoutes(
 
   app.post("/api/resume/analyze", async (req, res) => {
 
-    try {
+console.log("ATS BODY:", req.body);
 
-      const { resumeText, jobDescription } = req.body;
+try {
+
+const { resumeText, jobDescription } = req.body;
 
       const prompt = `
 You are an ATS system.

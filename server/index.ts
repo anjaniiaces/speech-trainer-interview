@@ -13,10 +13,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type","Authorization"]
 }));
 
-app.options("*", (req,res) => {
-  res.sendStatus(200);
-});
-
 app.options("*", cors());
 const httpServer = createServer(app);
 
