@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: './server/.env' }); 
+dotenv.config(); 
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 // only if your .env is inside /server
 

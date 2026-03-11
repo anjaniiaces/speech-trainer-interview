@@ -40,12 +40,47 @@ export default function QuestionSession() {
     : null;
 
   const handleComplete = async (transcript: string) => {
-    try {
-      await answerMutation.mutateAsync({ id: questionId, transcript });
-    } catch (error) {
-      console.error("Failed to submit:", error);
+
+  try {
+
+    const result = await answerMutation.mutateAsync({
+      id: questionId,
+      transcript
+    });
+
+    console.log("Interview result:", result);
+
+    // send score to dashboard safely
+    if (typeof window !== "undefined" && window.parent && window.parent !== window) {
+
+      try {
+
+        window.parent.postMessage({
+  type: "interviewScore",
+  score: (result?.score || 0) * 10
+}, "*");
+
+        const communicationScore =
+(((result?.speechClarity || 0) +
+  (result?.confidence || 0) +
+  (result?.structure || 0)) / 3) * 10;
+
+        window.parent.postMessage({
+          type: "communicationScore",
+          score: Math.round(communicationScore)
+        }, "*");
+
+      } catch (err) {
+        console.warn("Dashboard messaging failed:", err);
+      }
+
     }
-  };
+
+  } catch (error) {
+    console.error("Failed to submit:", error);
+  }
+
+}
 
   const handleReset = async () => {
     try {
