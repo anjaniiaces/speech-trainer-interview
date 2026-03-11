@@ -164,7 +164,9 @@ ${jobDescription}
 
       const interview = await storage.createInterview(input);
 
-      const prompt = `Generate 5 behavioral interview questions for a ${input.role} position. Return JSON array.`;
+      const prompt = `Generate 5 standard behavioral interview questions for a ${input.role} position.
+Format the output as a JSON array of strings.
+Only return the JSON array, no other text.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4.1",
@@ -257,27 +259,27 @@ The candidate was asked:
 Candidate response transcript:
 "${input.transcript}"
 
-Evaluate on:
+Evaluate the candidate on:
 
-1 Speech Delivery
+1. Speech Delivery
 - clarity
 - pacing
 - filler words
 - confidence
 - detect catchphrases
 
-2 Interview Quality
+2. Interview Quality
 - relevance
 - structure (STAR method)
 - strength of example
 - impact
 
-3 Professional Communication
+3. Professional Communication
 - vocabulary
 - conciseness
 - persuasion
 
-Return JSON:
+Return ONLY valid JSON.
 
 {
 "feedback": "string",
@@ -291,6 +293,13 @@ Return JSON:
 "gapAnalysis": "string",
 "catchphrases": ["string"]
 }
+
+Rules:
+- score must be between 0 and 100
+- speechClarity must be between 0 and 10
+- confidence must be between 0 and 10
+- structure must be between 0 and 10
+- Use realistic scoring (avoid rounding to tens unless appropriate).
 `;
 
       const response = await openai.chat.completions.create({

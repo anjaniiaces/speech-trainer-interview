@@ -57,7 +57,7 @@ export default function QuestionSession() {
 
         window.parent.postMessage({
   type: "interviewScore",
-  score: (result?.score || 0) * 10
+  score: result?.score || 0
 }, "*");
 
         const communicationScore =
